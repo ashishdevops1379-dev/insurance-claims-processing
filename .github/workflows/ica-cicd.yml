@@ -1,0 +1,49 @@
+
+name: IBM ICA CI-CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate ICA YAML
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install YAML validator
+        run: pip install pyyaml
+
+      - name: Validate YAML files
+        run: |
+          python - <<'PY'
+          import pathlib
+          import yaml
+
+          files = [
+              p for p in pathlib.Path(".").rglob("*.yaml")
+              if ".github" not in p.parts
+          ]
+          files += [
+              p for p in pathlib.Path(".").rglob("*.yml")
+              if ".github" not in p.parts
+          ]
+
+          if not files:
+              raise SystemExit("No application YAML files found")
+
+          for file in files:
+              with file.open(encoding="utf-8") as f:
+                  yaml.safe_load(f)
+              print(f"Validated: {file}")
+
+          print("ICA YAML syntax validation completed")
+          PY
